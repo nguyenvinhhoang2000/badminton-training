@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardBody, Chip } from "@heroui/react";
-import { Check, Star } from "lucide-react";
+import { Check, ChevronDown, Film, Star } from "lucide-react";
 import type { Exercise } from "@/data/workouts";
 
 interface Props {
@@ -24,6 +25,9 @@ export default function ExerciseCard({
   const completed = doneSets.filter(Boolean).length;
   const allDone = completed === exercise.sets;
 
+  const [open, setOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
   function handleSet(i: number) {
     const next = !doneSets[i];
     onToggleSet(i, next);
@@ -32,6 +36,8 @@ export default function ExerciseCard({
       onStartRest(defaultRest);
     }
   }
+
+  const hasGif = !!exercise.gif && !imgError;
 
   return (
     <Card
@@ -91,9 +97,7 @@ export default function ExerciseCard({
                 <span
                   className={[
                     "flex h-4 w-4 items-center justify-center rounded border",
-                    on
-                      ? "border-primary-foreground/60"
-                      : "border-default-300",
+                    on ? "border-primary-foreground/60" : "border-default-300",
                   ].join(" ")}
                 >
                   {on && <Check size={11} />}
@@ -102,6 +106,48 @@ export default function ExerciseCard({
               </button>
             );
           })}
+        </div>
+
+        {/* GIF minh hoạ */}
+        <div className="pl-10">
+          <button
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+          >
+            <Film size={14} />
+            Xem cách tập
+            <ChevronDown
+              size={14}
+              className={`transition-transform ${open ? "rotate-180" : ""}`}
+            />
+          </button>
+
+          <div
+            className={`grid transition-all duration-300 ease-in-out ${
+              open ? "grid-rows-[1fr] pt-3 opacity-100" : "grid-rows-[0fr] opacity-0"
+            }`}
+          >
+            <div className="overflow-hidden">
+              {hasGif ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={exercise.gif}
+                  alt={`Cách thực hiện: ${exercise.name}`}
+                  loading="lazy"
+                  onError={() => setImgError(true)}
+                  className="w-full rounded-xl border border-default-200 bg-default-50 object-cover"
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-1.5 rounded-xl border border-dashed border-default-300 bg-default-50 px-4 py-6 text-center">
+                  <Film size={22} className="text-default-400" />
+                  <p className="text-xs text-default-500">
+                    Chưa có ảnh minh hoạ cho bài này.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </CardBody>
     </Card>

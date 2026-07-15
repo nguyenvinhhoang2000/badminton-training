@@ -7,6 +7,9 @@ export interface Exercise {
   sets: number; // number of checkable sets
   cue: string; // form reminder
   star?: boolean; // key injury-prevention move
+  // Ảnh/GIF minh hoạ cách tập. Có thể là URL ngoài
+  // (vd https://...gif) hoặc file trong public/ (vd /gifs/wed-squat.gif).
+  gif?: string;
 }
 
 export interface Day {
@@ -63,6 +66,7 @@ export const days: Day[] = [
         volume: "3 hiệp × 12–15",
         sets: 3,
         cue: "Lưng thẳng, gối cùng hướng mũi chân, không quặp vào trong.",
+        gif: "https://upload.wikimedia.org/wikipedia/commons/4/4f/Squats_wbs.gif",
       },
       {
         id: "wed-lunge",
@@ -70,6 +74,7 @@ export const days: Day[] = [
         volume: "3 × 10 mỗi chân",
         sets: 3,
         cue: "Bước lùi, hạ gối sau gần đất, dồn lực vào gót chân trước.",
+        gif: "https://upload.wikimedia.org/wikipedia/commons/a/af/Lunge-CDC_strength_training_for_older_adults.gif",
       },
       {
         id: "wed-calf",
@@ -77,6 +82,7 @@ export const days: Day[] = [
         volume: "3 hiệp × 15–20",
         sets: 3,
         cue: "Đứng nửa bàn chân trên bậc thang để hạ gót sâu hơn.",
+        gif: "https://upload.wikimedia.org/wikipedia/commons/3/3e/Rocking-standing-calf-raise-1.gif",
       },
       {
         id: "wed-balance",
@@ -85,6 +91,7 @@ export const days: Day[] = [
         sets: 3,
         star: true,
         cue: "Phòng lật cổ chân. Khá hơn thì nhắm mắt hoặc đứng trên mặt mềm.",
+        gif: "https://media.tenor.com/9VloFRHQkKAAAAAM/balance-1leg.gif",
       },
       {
         id: "wed-rope",
@@ -92,6 +99,7 @@ export const days: Day[] = [
         volume: "3 hiệp × 1 phút",
         sets: 3,
         cue: "Tiếp đất nửa bàn chân trước, gối hơi chùng, nhảy vừa sức.",
+        gif: "https://media.tenor.com/FzbqxYZC98IAAAAM/jump-rope-exercise.gif",
       },
       {
         id: "wed-plank",
@@ -99,6 +107,7 @@ export const days: Day[] = [
         volume: "3 × 30–45 giây",
         sets: 3,
         cue: "Thân thẳng như tấm ván, siết bụng & mông, không võng lưng.",
+        gif: "https://media.tenor.com/73Sld1d9MbkAAAAM/plank-workout.gif",
       },
     ],
   },
@@ -126,6 +135,7 @@ export const days: Day[] = [
         volume: "3 hiệp × 15",
         sets: 3,
         cue: "Duỗi thẳng dây trước ngực, kéo căng sang hai bên, siết bả vai.",
+        gif: "https://media.tenor.com/IrYw1RzccdoAAAAM/resistance-bands-workout.gif",
       },
       {
         id: "thu-wrist",
@@ -133,6 +143,7 @@ export const days: Day[] = [
         volume: "3 hiệp × 15",
         sets: 3,
         cue: "Cẳng tay tì lên đùi, chỉ cử động cổ tay cuộn cả lên và xuống.",
+        gif: "https://media.tenor.com/J3eICLvit4kAAAAM/wrist-curl-bar.gif",
       },
       {
         id: "thu-twist",
@@ -140,6 +151,7 @@ export const days: Day[] = [
         volume: "3 × 20 (10/bên)",
         sets: 3,
         cue: "Ngả lưng nhẹ, nhấc chân, xoay thân — mô phỏng lực vụt cầu.",
+        gif: "https://media.tenor.com/OLwm7qK98FgAAAAM/russiantwist-core.gif",
       },
       {
         id: "thu-sideplank",
@@ -147,6 +159,7 @@ export const days: Day[] = [
         volume: "3 × 20–30 giây/bên",
         sets: 3,
         cue: "Khó quá thì chống gối xuống để giảm độ nặng.",
+        gif: "https://media.tenor.com/1K4pElADw6sAAAAM/fitness-sideplank.gif",
       },
       {
         id: "thu-birddog",
@@ -154,6 +167,7 @@ export const days: Day[] = [
         volume: "3 × 10 mỗi bên",
         sets: 3,
         cue: "Tư thế bò, duỗi tay này + chân đối diện, giữ 2 giây rồi đổi bên.",
+        gif: "https://media.tenor.com/6nO5406JCHIAAAAM/bird-dog.gif",
       },
     ],
   },
