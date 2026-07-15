@@ -50,7 +50,7 @@ npm start
 - `app/training/page.tsx` — **trang tập luyện**: chọn ngày, tick hiệp, bộ đếm nghỉ.
 - `context/AppState.tsx` — state dùng chung cho cả hai trang (tiến độ, lịch sử, timer, cloud sync).
 - `components/Header.tsx` — thanh header điều hướng (Trang chủ / Tập luyện) + streak + đồng bộ + theme.
-- `data/workouts.ts` — toàn bộ nội dung lịch tập (sửa ở đây để đổi bài/khối lượng).
+- `data/workouts.ts` — toàn bộ nội dung lịch tập (sửa ở đây để đổi bài/khối lượng). Thêm ảnh minh hoạ bằng field `gif` cho từng bài — URL ngoài (`https://...gif`) hoặc file trong `public/gifs/` (vd `/gifs/wed-squat.gif`); nút "Xem cách tập" trong mỗi thẻ sẽ xổ ra hiển thị.
 - `data/history.ts` — model lịch sử theo ngày + logic streak/thống kê/lịch.
 - `components/WeekStrip.tsx` — thanh chọn ngày.
 - `components/ExerciseCard.tsx` — thẻ bài tập + tick từng hiệp.
