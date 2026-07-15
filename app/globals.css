@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-display {
+  font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* subtle grid backdrop for the training screen */
+.court-grid {
+  background-image:
+    linear-gradient(to right, rgba(15, 118, 110, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(15, 118, 110, 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.dark .court-grid {
+  background-image:
+    linear-gradient(to right, rgba(45, 212, 191, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(45, 212, 191, 0.07) 1px, transparent 1px);
+}
+
+/* hide scrollbar on the week strip */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
