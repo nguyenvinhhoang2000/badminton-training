@@ -8,8 +8,13 @@ create table if not exists public.user_state (
   user_id    uuid primary key references auth.users (id) on delete cascade,
   progress   jsonb not null default '{}'::jsonb,
   history    jsonb not null default '{}'::jsonb,
+  custom     jsonb not null default '{}'::jsonb,
   updated_at timestamptz not null default now()
 );
+
+-- Nếu bảng đã tạo từ trước (chưa có cột custom), chạy thêm dòng này:
+alter table public.user_state
+  add column if not exists custom jsonb not null default '{}'::jsonb;
 
 -- Bật Row Level Security: mỗi user chỉ đọc/ghi đúng hàng của mình.
 alter table public.user_state enable row level security;

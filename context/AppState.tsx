@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { days, type Day } from "@/data/workouts";
+import { days, type Day, type Exercise } from "@/data/workouts";
 import { useCloudSync } from "@/hooks/useCloudSync";
 import {
   HISTORY_KEY,
@@ -17,6 +17,12 @@ import {
   type HistoryEntry,
   type HistoryMap,
 } from "@/data/history";
+import {
+  CUSTOM_KEY,
+  cloneExercises,
+  defaultExercises,
+  type CustomMap,
+} from "@/data/customize";
 
 export const STORE_KEY = "cau-long-progress-v1";
 export const DEFAULT_REST = 60;
@@ -74,6 +80,11 @@ interface AppStateValue {
   toggleSet: (dayKey: string, exId: string, i: number, next: boolean) => void;
   resetDay: () => void;
   logToday: (dayKey: string, type: Day["type"], done: boolean) => void;
+  // custom exercises
+  exercisesOf: (dayKey: string) => Exercise[];
+  isCustomized: (dayKey: string) => boolean;
+  saveExercises: (dayKey: string, list: Exercise[]) => void;
+  resetExercises: (dayKey: string) => void;
   // rest timer
   duration: number;
   remaining: number;
@@ -94,14 +105,17 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
 
   const [completed, setCompleted] = useState<Record<string, boolean>>({});
   const [history, setHistory] = useState<HistoryMap>({});
+  const [custom, setCustom] = useState<CustomMap>({});
   const [loaded, setLoaded] = useState(false);
 
   const cloud = useCloudSync({
     completed,
     history,
+    custom,
     loaded,
     setCompleted,
     setHistory,
+    setCustom,
   });
 
   // rest timer state
@@ -125,6 +139,8 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       if (raw) setCompleted(JSON.parse(raw));
       const rawHist = localStorage.getItem(HISTORY_KEY);
       if (rawHist) setHistory(JSON.parse(rawHist));
+      const rawCustom = localStorage.getItem(CUSTOM_KEY);
+      if (rawCustom) setCustom(JSON.parse(rawCustom));
     } catch {
       /* ignore */
     }
@@ -148,6 +164,15 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       /* ignore */
     }
   }, [history, loaded]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    try {
+      localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom));
+    } catch {
+      /* ignore */
+    }
+  }, [custom, loaded]);
 
   // countdown loop
   useEffect(() => {
@@ -199,12 +224,37 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     [completed]
   );
 
+  // Exercises for a day: user's custom list if present, else the defaults.
+  const exercisesOf = useCallback(
+    (dayKey: string): Exercise[] => custom[dayKey] ?? defaultExercises(dayKey),
+    [custom]
+  );
+
+  const isCustomized = useCallback(
+    (dayKey: string) => !!custom[dayKey],
+    [custom]
+  );
+
+  const saveExercises = useCallback((dayKey: string, list: Exercise[]) => {
+    setCustom((prev) => ({ ...prev, [dayKey]: list }));
+  }, []);
+
+  const resetExercises = useCallback((dayKey: string) => {
+    setCustom((prev) => {
+      if (!prev[dayKey]) return prev;
+      const copy = { ...prev };
+      delete copy[dayKey];
+      return copy;
+    });
+  }, []);
+
   const progressOf = useCallback(
     (d: Day) => {
-      if (d.type !== "training" || !d.exercises) return 0;
+      if (d.type !== "training") return 0;
+      const list = exercisesOf(d.key);
       let total = 0;
       let done = 0;
-      for (const ex of d.exercises) {
+      for (const ex of list) {
         total += ex.sets;
         for (let i = 0; i < ex.sets; i++) {
           if (completed[setKey(d.key, ex.id, i)]) done++;
@@ -212,7 +262,7 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
       }
       return total ? done / total : 0;
     },
-    [completed]
+    [completed, exercisesOf]
   );
 
   const toggleSet = useCallback(
@@ -239,11 +289,14 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     [todayISO]
   );
 
-  // Auto-log when today's training session reaches 100%.
+  // Auto-log when today's session (any day that has exercises) reaches 100%.
   useEffect(() => {
     if (!loaded || !today || !todayISO) return;
     const d = days.find((x) => x.key === today);
-    if (!d || d.type !== "training") return;
+    if (!d) return;
+    // only exercise-based days auto-log; days with no exercises use the
+    // manual "attended" button instead.
+    if (exercisesOf(today).length === 0) return;
     const complete = progressOf(d) >= 1;
     setHistory((prev) => {
       const has = !!prev[todayISO]?.done;
@@ -253,14 +306,15 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
           [todayISO]: { dayKey: today, type: d.type, done: true },
         };
       }
-      if (!complete && has && prev[todayISO]?.type === "training") {
+      // roll back the auto-log if the day drops back below 100%
+      if (!complete && has) {
         const copy = { ...prev };
         delete copy[todayISO];
         return copy;
       }
       return prev;
     });
-  }, [completed, loaded, today, todayISO, progressOf]);
+  }, [completed, loaded, today, todayISO, progressOf, exercisesOf]);
 
   const resetDay = useCallback(() => {
     setCompleted((prev) => {
@@ -291,6 +345,10 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     toggleSet,
     resetDay,
     logToday,
+    exercisesOf,
+    isCustomized,
+    saveExercises,
+    resetExercises,
     duration,
     remaining,
     running,
