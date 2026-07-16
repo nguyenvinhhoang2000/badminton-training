@@ -88,20 +88,23 @@ export function computeStreak(history: HistoryMap, todayISO: string): number {
   let count = 0;
   let first = true;
   for (let guard = 0; guard < 3650; guard++) {
-    if (isFreeDay(cursor)) {
-      cursor = addDays(cursor, -1);
-      first = false;
-      continue;
-    }
+    // A logged, completed day always counts — even if its weekday template is
+    // normally a rest day (the user may have customised it into a workout).
     if (history[cursor]?.done) {
       count++;
       cursor = addDays(cursor, -1);
       first = false;
       continue;
     }
-    // required day, not done
+    // Not logged: rest / active-recovery days are transparent (don't break).
+    if (isFreeDay(cursor)) {
+      cursor = addDays(cursor, -1);
+      first = false;
+      continue;
+    }
+    // A workout day that wasn't done: today may just be unfinished; otherwise
+    // the streak is broken.
     if (first) {
-      // today isn't finished yet — allow, keep walking back
       cursor = addDays(cursor, -1);
       first = false;
       continue;
@@ -128,14 +131,13 @@ export function computeLongestStreak(
   let cur = 0;
   let cursor = start;
   for (let guard = 0; guard < 3650 && cursor <= todayISO; guard++) {
-    if (!isFreeDay(cursor)) {
-      if (history[cursor]?.done) {
-        cur++;
-        if (cur > max) max = cur;
-      } else {
-        cur = 0;
-      }
+    if (history[cursor]?.done) {
+      cur++;
+      if (cur > max) max = cur;
+    } else if (!isFreeDay(cursor)) {
+      cur = 0;
     }
+    // free days that weren't logged are transparent — keep the run going
     cursor = addDays(cursor, 1);
   }
   return max;

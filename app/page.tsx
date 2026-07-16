@@ -34,11 +34,9 @@ const typeMeta: Record<
 };
 
 export default function Home() {
-  const { mounted, today, progressOf } = useAppState();
+  const { mounted, today, progressOf, exercisesOf } = useAppState();
   const todayDay = days.find((d) => d.key === today);
-
-  console.log(mounted, todayDay);
-  
+  const todayHasExercises = today ? exercisesOf(today).length > 0 : false;
 
   return (
     <main className="min-h-screen">
@@ -62,9 +60,17 @@ export default function Home() {
             <CardBody className="gap-4 p-4">
               <div className="flex items-center gap-3">
                 <span
-                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${typeMeta[todayDay.type].wrap}`}
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${
+                    todayHasExercises
+                      ? "bg-blue-500/10 text-blue-500"
+                      : typeMeta[todayDay.type].wrap
+                  }`}
                 >
-                  {typeMeta[todayDay.type].icon}
+                  {todayHasExercises ? (
+                    <Dumbbell size={22} />
+                  ) : (
+                    typeMeta[todayDay.type].icon
+                  )}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-default-400">
@@ -73,7 +79,7 @@ export default function Home() {
                   <h2 className="font-display text-lg font-bold leading-tight">
                     {todayDay.title}
                   </h2>
-                  {todayDay.type === "training" && (
+                  {todayHasExercises && (
                     <p className="text-xs text-default-500">
                       Tiến độ {Math.round(progressOf(todayDay) * 100)}%
                     </p>
@@ -87,7 +93,9 @@ export default function Home() {
                 endContent={<ArrowRight size={16} />}
                 className="w-full font-semibold"
               >
-                {typeMeta[todayDay.type].cta}
+                {todayHasExercises
+                  ? "Vào buổi tập"
+                  : typeMeta[todayDay.type].cta}
               </Button>
             </CardBody>
           </Card>

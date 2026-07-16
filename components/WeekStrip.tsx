@@ -7,7 +7,8 @@ interface Props {
   selected: string;
   today: string | null;
   onSelect: (key: string) => void;
-  progressOf: (day: Day) => number; // 0..1 for training days
+  progressOf: (day: Day) => number; // 0..1 for days with exercises
+  hasExercises: (dayKey: string) => boolean;
 }
 
 const accentBar: Record<Day["accent"], string> = {
@@ -17,8 +18,8 @@ const accentBar: Record<Day["accent"], string> = {
   slate: "bg-default-300",
 };
 
-function DayIcon({ day }: { day: Day }) {
-  if (day.type === "training") return <Dumbbell size={13} />;
+function DayIcon({ day, workout }: { day: Day; workout: boolean }) {
+  if (workout) return <Dumbbell size={13} />;
   if (day.type === "badminton") return <Sparkles size={13} />;
   return <Moon size={13} />;
 }
@@ -28,14 +29,16 @@ export default function WeekStrip({
   today,
   onSelect,
   progressOf,
+  hasExercises,
 }: Props) {
   return (
     <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
       {days.map((day) => {
         const isSel = day.key === selected;
         const isToday = day.key === today;
-        const prog = day.type === "training" ? progressOf(day) : 0;
-        const done = day.type === "training" && prog >= 1;
+        const workout = hasExercises(day.key);
+        const prog = workout ? progressOf(day) : 0;
+        const done = workout && prog >= 1;
         return (
           <button
             key={day.key}
@@ -61,14 +64,13 @@ export default function WeekStrip({
                 accentBar[day.accent],
               ].join(" ")}
             >
-              {done ? <Check size={14} /> : <DayIcon day={day} />}
+              {done ? <Check size={14} /> : <DayIcon day={day} workout={workout} />}
             </span>
-            {day.type === "training" && (
+            {workout ? (
               <span className="text-[9px] tabular-nums text-default-400">
                 {Math.round(prog * 100)}%
               </span>
-            )}
-            {day.type !== "training" && (
+            ) : (
               <span className="text-[9px] text-default-400">
                 {day.type === "badminton" ? "cầu" : "nghỉ"}
               </span>

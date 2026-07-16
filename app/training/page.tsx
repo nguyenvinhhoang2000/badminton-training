@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button, Card, CardBody, Progress } from "@heroui/react";
 import {
   RotateCcw,
@@ -10,10 +10,19 @@ import {
   Moon,
   CalendarCheck,
   CalendarX,
+  Pencil,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Check,
+  Star,
 } from "lucide-react";
-import { days, reminders, type Day } from "@/data/workouts";
+import { days, reminders, type Day, type Exercise } from "@/data/workouts";
+import { blankExercise, cloneExercises } from "@/data/customize";
 import WeekStrip from "@/components/WeekStrip";
 import ExerciseCard from "@/components/ExerciseCard";
+import ExerciseEditor from "@/components/ExerciseEditor";
 import RestTimer from "@/components/RestTimer";
 import { useAppState, DEFAULT_REST } from "@/context/AppState";
 
@@ -36,6 +45,10 @@ export default function TrainingPage() {
     toggleSet,
     resetDay,
     logToday,
+    exercisesOf,
+    isCustomized,
+    saveExercises,
+    resetExercises,
     startRest,
     duration,
     remaining,
@@ -45,19 +58,66 @@ export default function TrainingPage() {
   } = useAppState();
 
   const day = useMemo(() => days.find((d) => d.key === selected)!, [selected]);
+  const exercises = exercisesOf(day.key);
+  const hasExercises = exercises.length > 0;
 
-  const isTraining = day.type === "training";
-  const dayProgress = isTraining ? progressOf(day) : 0;
+  const [editing, setEditing] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<"add" | "edit">("add");
+  const [editTarget, setEditTarget] = useState<Exercise | null>(null);
+
+  const dayProgress = hasExercises ? progressOf(day) : 0;
   const isToday = selected === today;
   const todayDone = !!(todayISO && history[todayISO]?.done);
   const canLogManually =
     isToday && (day.type === "badminton" || day.type === "rest-active");
+  const showTimer = hasExercises && !editing;
+
+  function openAdd() {
+    setEditTarget(blankExercise(day.key));
+    setEditorMode("add");
+    setEditorOpen(true);
+  }
+
+  function openEdit(ex: Exercise) {
+    setEditTarget(ex);
+    setEditorMode("edit");
+    setEditorOpen(true);
+  }
+
+  function handleSave(ex: Exercise) {
+    const list = cloneExercises(exercises);
+    if (editorMode === "add") {
+      saveExercises(day.key, [...list, ex]);
+    } else {
+      saveExercises(
+        day.key,
+        list.map((e) => (e.id === ex.id ? ex : e))
+      );
+    }
+    setEditorOpen(false);
+  }
+
+  function del(id: string) {
+    saveExercises(
+      day.key,
+      cloneExercises(exercises).filter((e) => e.id !== id)
+    );
+  }
+
+  function move(idx: number, dir: -1 | 1) {
+    const list = cloneExercises(exercises);
+    const j = idx + dir;
+    if (j < 0 || j >= list.length) return;
+    [list[idx], list[j]] = [list[j], list[idx]];
+    saveExercises(day.key, list);
+  }
 
   return (
-    <main className={isTraining ? "court-grid min-h-screen" : "min-h-screen"}>
+    <main className={hasExercises ? "court-grid min-h-screen" : "min-h-screen"}>
       <div
         className="mx-auto max-w-xl px-4 pt-5"
-        style={{ paddingBottom: isTraining ? 120 : 32 }}
+        style={{ paddingBottom: showTimer ? 120 : 32 }}
       >
         {/* Week selector */}
         <WeekStrip
@@ -65,6 +125,7 @@ export default function TrainingPage() {
           today={today}
           onSelect={setSelected}
           progressOf={progressOf}
+          hasExercises={(k) => exercisesOf(k).length > 0}
         />
 
         {/* Day heading */}
@@ -77,20 +138,138 @@ export default function TrainingPage() {
             </p>
             <h2 className="font-display text-xl font-bold">{day.title}</h2>
           </div>
-          {isTraining && (
+          {editing ? (
             <Button
               size="sm"
-              variant="light"
-              startContent={<RotateCcw size={14} />}
-              onPress={resetDay}
+              color="primary"
+              variant="flat"
+              startContent={<Check size={14} />}
+              onPress={() => setEditing(false)}
             >
-              Đặt lại ngày
+              Xong
             </Button>
+          ) : (
+            hasExercises && (
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant="light"
+                  startContent={<Pencil size={14} />}
+                  onPress={() => setEditing(true)}
+                >
+                  Sửa bài
+                </Button>
+                <Button
+                  size="sm"
+                  variant="light"
+                  isIconOnly
+                  aria-label="Đặt lại tiến độ ngày"
+                  onPress={resetDay}
+                >
+                  <RotateCcw size={14} />
+                </Button>
+              </div>
+            )
           )}
         </div>
 
-        {/* Content by day type */}
-        {isTraining ? (
+        {/* Body */}
+        {editing ? (
+          <div className="flex flex-col gap-3">
+            {exercises.map((ex, idx) => (
+              <Card
+                key={ex.id}
+                shadow="sm"
+                className="border border-default-200 bg-content1"
+              >
+                <CardBody className="flex-row items-center gap-2 p-3">
+                  <div className="flex flex-col">
+                    <button
+                      aria-label="Lên"
+                      disabled={idx === 0}
+                      onClick={() => move(idx, -1)}
+                      className="text-default-400 hover:text-default-600 disabled:opacity-30"
+                    >
+                      <ArrowUp size={15} />
+                    </button>
+                    <button
+                      aria-label="Xuống"
+                      disabled={idx === exercises.length - 1}
+                      onClick={() => move(idx, 1)}
+                      className="text-default-400 hover:text-default-600 disabled:opacity-30"
+                    >
+                      <ArrowDown size={15} />
+                    </button>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1">
+                      {ex.star && (
+                        <Star
+                          size={12}
+                          className="shrink-0 fill-amber-400 text-amber-400"
+                        />
+                      )}
+                      <span className="truncate text-sm font-semibold">
+                        {ex.name}
+                      </span>
+                    </div>
+                    <span className="text-xs text-default-500">
+                      {ex.volume} · {ex.sets} hiệp
+                    </span>
+                  </div>
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="flat"
+                    aria-label="Sửa"
+                    onPress={() => openEdit(ex)}
+                  >
+                    <Pencil size={15} />
+                  </Button>
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="flat"
+                    color="danger"
+                    aria-label="Xoá"
+                    onPress={() => del(ex.id)}
+                  >
+                    <Trash2 size={15} />
+                  </Button>
+                </CardBody>
+              </Card>
+            ))}
+
+            {exercises.length === 0 && (
+              <p className="px-1 text-xs text-default-500">
+                Chưa có bài tập nào. Bấm “Thêm bài tập” để tạo buổi tập cho ngày
+                này.
+              </p>
+            )}
+
+            <Button
+              variant="flat"
+              color="primary"
+              startContent={<Plus size={16} />}
+              onPress={openAdd}
+              className="w-full font-medium"
+            >
+              Thêm bài tập
+            </Button>
+
+            {isCustomized(day.key) && (
+              <Button
+                variant="light"
+                color="warning"
+                size="sm"
+                startContent={<RotateCcw size={14} />}
+                onPress={() => resetExercises(day.key)}
+              >
+                Khôi phục bài mặc định
+              </Button>
+            )}
+          </div>
+        ) : hasExercises ? (
           <div className="flex flex-col gap-3">
             <Progress
               aria-label="Tiến độ buổi tập"
@@ -100,7 +279,7 @@ export default function TrainingPage() {
               className="mb-1"
             />
 
-            {day.warmup && (
+            {day.type === "training" && day.warmup && (
               <Card
                 shadow="none"
                 className="border border-dashed border-default-300 bg-default-50"
@@ -114,11 +293,11 @@ export default function TrainingPage() {
               </Card>
             )}
 
-            {day.note && (
+            {day.type === "training" && day.note && (
               <p className="px-1 text-xs text-default-500">{day.note}</p>
             )}
 
-            {day.exercises!.map((ex, idx) => (
+            {exercises.map((ex, idx) => (
               <ExerciseCard
                 key={ex.id}
                 exercise={ex}
@@ -175,6 +354,17 @@ export default function TrainingPage() {
                   Chỉ ghi nhận được cho ngày hôm nay.
                 </p>
               )}
+              <Button
+                size="sm"
+                variant="light"
+                startContent={<Plus size={15} />}
+                onPress={() => {
+                  setEditing(true);
+                  openAdd();
+                }}
+              >
+                Thêm bài tập cho ngày này
+              </Button>
             </CardBody>
           </Card>
         )}
@@ -202,8 +392,7 @@ export default function TrainingPage() {
         </Card>
       </div>
 
-      {/* Sticky rest timer — only on training days */}
-      {isTraining && (
+      {showTimer && (
         <RestTimer
           remaining={remaining}
           duration={duration}
@@ -213,6 +402,14 @@ export default function TrainingPage() {
           onReset={resetTimer}
         />
       )}
+
+      <ExerciseEditor
+        open={editorOpen}
+        initial={editTarget}
+        mode={editorMode}
+        onClose={() => setEditorOpen(false)}
+        onSave={handleSave}
+      />
     </main>
   );
 }

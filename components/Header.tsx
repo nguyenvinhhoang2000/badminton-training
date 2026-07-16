@@ -60,7 +60,8 @@ export default function Header() {
               enabled={cloud.enabled}
               session={cloud.session}
               status={cloud.status}
-              onSignIn={cloud.signInWithEmail}
+              onSignIn={cloud.signIn}
+              onSignUp={cloud.signUp}
               onSignOut={cloud.signOut}
             />
             <Button
