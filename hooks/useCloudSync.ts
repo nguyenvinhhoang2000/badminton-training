@@ -162,13 +162,34 @@ export function useCloudSync({
     return () => clearTimeout(t);
   }, [completed, history, custom, session, loaded, buildRow]);
 
-  const signInWithEmail = useCallback(async (email: string) => {
+  // Map common Supabase auth errors to Vietnamese.
+  function viError(msg?: string | null): string | null {
+    if (!msg) return null;
+    if (/invalid login credentials/i.test(msg))
+      return "Email hoặc mật khẩu không đúng.";
+    if (/user already registered/i.test(msg))
+      return "Email này đã có tài khoản — hãy đăng nhập.";
+    if (/password should be at least/i.test(msg))
+      return "Mật khẩu tối thiểu 6 ký tự.";
+    return msg;
+  }
+
+  const signIn = useCallback(async (email: string, password: string) => {
     if (!supabase) return { error: "Supabase chưa được cấu hình." };
-    const { error } = await supabase.auth.signInWithOtp({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
-      options: { emailRedirectTo: window.location.origin },
+      password,
     });
-    return { error: error?.message ?? null };
+    return { error: viError(error?.message) };
+  }, []);
+
+  const signUp = useCallback(async (email: string, password: string) => {
+    if (!supabase)
+      return { error: "Supabase chưa được cấu hình.", needsConfirm: false };
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return { error: viError(error.message), needsConfirm: false };
+    // If "Confirm email" is on in Supabase, no session is returned yet.
+    return { error: null, needsConfirm: !data.session };
   }, []);
 
   const signOut = useCallback(async () => {
@@ -181,7 +202,8 @@ export function useCloudSync({
     session,
     user: session?.user ?? null,
     status,
-    signInWithEmail,
+    signIn,
+    signUp,
     signOut,
   };
 }
